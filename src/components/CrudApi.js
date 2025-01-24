@@ -4,12 +4,17 @@ import CrudTable from "./CrudTable";
 import { helpHttp } from "../helpers/helpHttp";
 import Loader from "./Loader";
 import Message from "./Message";
+import ModalPortal from "./ModalPortal";
+import { useModal } from "../hooks/useModal";
 
 const CrudApi = () => {
   const [db, setDb] = useState(null);
   const [dataToEdit, setDataToEdit] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
+  const [isOpenPortal, openModalPortal, closeModalPortal] = useModal(false);
 
   let api = helpHttp();
   let url = "http://localhost:5000/users";
@@ -66,28 +71,29 @@ const CrudApi = () => {
   };
 
   const deleteData = (id) => {
-    let isDelete = window.confirm(
-      `¿Are you sure you want to delete the record with id '${id}'?`
-    );
-
-    if (isDelete) {
-      let endpoint = `${url}/${id}`;
-      let options = {
-        headers: { "content-type": "application/json" },
-      };
-
-      api.del(endpoint, options).then((res) => {
-        if (!res.err) {
-          let newData = db.filter((el) => el.id !== id);
-          setDb(newData);
-        } else {
-          setError(res);
-        }
-      });
-    } else {
-      return;
-    }
+    openModalPortal();
+    setDeleteId(id);
   };
+
+  const confirmDelete = () => {
+    let endpoint = `${url}/${deleteId}`;
+    let options = {
+      headers: { "content-type": "application/json" },
+    };
+
+    api.del(endpoint, options).then((res) => {
+      if (!res.err) {
+        let newData = db.filter((el) => el.id !== deleteId);
+        setDb(newData);
+      } else {
+        setError(res);
+      }
+    });
+
+    closeModalPortal();
+    setDeleteId(null);
+  };
+
 
   return (
     <div>
@@ -114,6 +120,12 @@ const CrudApi = () => {
           />
         )}
       </article>
+      <ModalPortal isOpen={isOpenPortal} closeModal={closeModalPortal}>
+        <h2>Modal Portal</h2>
+        <h3>Are you sure you want to delete the record with id '{deleteId}'?</h3>
+        <button onClick={confirmDelete}>Yes</button>
+        <button onClick={closeModalPortal}>No</button>
+      </ModalPortal>
     </div>
   );
 };

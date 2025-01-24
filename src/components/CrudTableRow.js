@@ -1,6 +1,6 @@
 import React from "react";
 
-const CrudTableRow = ({ el, setDataToEdit, deleteData }) => {
+const CrudTableRow = React.memo(({ el, setDataToEdit, deleteData }) => {
   let { name, country, age, id } = el;
   return (
     <tr>
@@ -13,6 +13,6 @@ const CrudTableRow = ({ el, setDataToEdit, deleteData }) => {
       </td>
     </tr>
   );
-};
+});
 
 export default CrudTableRow;
