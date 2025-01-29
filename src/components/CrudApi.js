@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import CrudForm from "./CrudForm";
 import CrudTable from "./CrudTable";
 import { helpHttp } from "../helpers/helpHttp";
@@ -29,12 +29,11 @@ const CrudApi = () => {
         setDb(null);
         setError(res);
       }
-
       setLoading(false);
     });
   }, [url]);
 
-  const createData = (data) => {
+  const createRow = (data) => {
     data.id = Date.now().toString();
 
     let options = {
@@ -51,29 +50,32 @@ const CrudApi = () => {
     });
   };
 
-  const updateData = (data) => {
-    let endpoint = `${url}/${data.id}`;
+  const updateRow = useCallback(
+    (data) => {
+      let endpoint = `${url}/${data.id}`;
 
-    let options = {
-      body: data,
-      headers: { "content-type": "application/json" },
-    };
+      let options = {
+        body: data,
+        headers: { "content-type": "application/json" },
+      };
 
-    api.put(endpoint, options).then((res) => {
-      if (!res.err) {
-        let newData = db.map((el) => (el.id === data.id ? data : el));
-        console.log(newData);
-        setDb(newData);
-      } else {
-        setError(res);
-      }
-    });
-  };
+      api.put(endpoint, options).then((res) => {
+        if (!res.err) {
+          let newData = db.map((el) => (el.id === data.id ? data : el));
+          console.log(newData);
+          setDb(newData);
+        } else {
+          setError(res);
+        }
+      });
+    },
+    [api, db, url]
+  );
 
-  const deleteData = (id) => {
+  const deleteRow = useCallback((id) => {
     openModalPortal();
     setDeleteId(id);
-  };
+  }, []);
 
   const confirmDelete = () => {
     let endpoint = `${url}/${deleteId}`;
@@ -94,14 +96,13 @@ const CrudApi = () => {
     setDeleteId(null);
   };
 
-
   return (
     <div>
       <h2>CRUD User Operations</h2>
       <article className="grid-1-2">
         <CrudForm
-          createData={createData}
-          updateData={updateData}
+          createData={createRow}
+          updateData={updateRow}
           dataToEdit={dataToEdit}
           setDataToEdit={setDataToEdit}
         />
@@ -116,13 +117,15 @@ const CrudApi = () => {
           <CrudTable
             data={db}
             setDataToEdit={setDataToEdit}
-            deleteData={deleteData}
+            deleteData={deleteRow}
           />
         )}
       </article>
       <ModalPortal isOpen={isOpenPortal} closeModal={closeModalPortal}>
         <h2>Modal Portal</h2>
-        <h3>Are you sure you want to delete the record with id '{deleteId}'?</h3>
+        <h3>
+          Are you sure you want to delete the record with id '{deleteId}'?
+        </h3>
         <button onClick={confirmDelete}>Yes</button>
         <button onClick={closeModalPortal}>No</button>
       </ModalPortal>
